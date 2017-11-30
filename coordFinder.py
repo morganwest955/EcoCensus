@@ -26,32 +26,39 @@ class CoordFinder:
 
     # Converts coordinates from geographic to decimal degrees
     # Used because coordinates stored in image metadata are in geographic form
-    def toDecimalDegrees(self,droneCoords):
+    def toDecimalDegrees(self,droneLat,droneLong):
         # Geographic coords stored as tuple of lists ([hours,minutes,seconds],[hours,minutes,seconds])
         # Conversion formula is (hr + (min/60) + (sec/3600))
-        latitude = droneCoords[0]
-        longitude = droneCoords[1]
+        latitude = droneLat
+        longitude = droneLong
         newLatitude = float(latitude[0] + float(latitude[1] / 60) + float(latitude[2] / 3600))
-        lewLongitude = float(longitude[0] + float(longitude[1] / 60) + float(longitude[2] / 3600))
+        newLongitude = float(longitude[0] + float(longitude[1] / 60) + float(longitude[2] / 3600))
+        print newLatitude, newLongitude
         return (newLatitude,newLongitude)
 
     # Takes the coordinate given from the image data and calculates the edge
-    def getEdges(self,droneCoords,imageRatio):
+    def getEdges(self,droneLat,droneLong,imageRatio):
         # TODO: implement directional calculation
         # TODO: convert distToEdge from meters to decimal degrees
             # can use haversine formula for 100% accuracy (complicated), but
             # precision of individual trees: 0.00001 DD = 1.0247m at 23 degrees N/S
-        droneCoords = self.toDecimalDegrees(droneCoords)
+        droneCoords = self.toDecimalDegrees(droneLat,droneLong)
         edges = [] # list of edges [top, right, bottom, left]
         distToEdge = float(self.droneHeight*math.tan(self.theta))
         # convert from meters to decimal degrees: 1.0247 meter = 0.00001 dd
         # 1 m = 0.0004858 dd
-        distToEdge = float(distToEdge * 0.0004858)
+        distToEdge = float(distToEdge * 0.0004858) # conversion from meters to decimal degrees
         # edges assuming orientation is north-up
-        edges.append(float((droneCoords[0] + (imageRatio * distToEdge), droneCoords[1]))) # N
-        edges.append(float((droneCoords[0], droneCoords[1] - distToEdge))) # E
-        edges.append(float((droneCoords[0] - (imageRatio * distToEdge), droneCoords[1]))) # S
-        edges.append(float((droneCoords[0], droneCoords[1] + distToEdge))) # W
+        # can be changed later when direction variable is introduced
+        edges.append((droneCoords[0] + (imageRatio * distToEdge), droneCoords[1])) # N
+        edges.append((droneCoords[0], droneCoords[1] - distToEdge)) # E
+        edges.append((droneCoords[0] - (imageRatio * distToEdge), droneCoords[1])) # S
+        edges.append((droneCoords[0], droneCoords[1] + distToEdge)) # W
+        # TODO: Implement directional calculation
+            # probably do it before adding to the drone coords too
+        # TODO: convert degree (phi) direction to radians
+        # x' = xcos(phi)-ysin(phi)
+        # y' = ycox(phi)+xsin(phi)
         return edges
     
     # imageResolution should be a tuple (eg (4000,4000)) with the format (width,height)
@@ -60,10 +67,9 @@ class CoordFinder:
     # direction is not available in the image metadata but should be passed as a polar
     # coordinate.  If it is not available, pass it as 0
     # plantCoords should be an array of tuples for the coordinates in the image
-    def processCoords(self,droneCoords,plantCoords,imageResolution):
-        # imageResolution[0] = width, imageResolution[1] = length
-        imageRatio = float(float(imageResolution[0]) / float(imageResolution[1]))
-        edges = getEdges(droneCoords,imageRatio)
+    def processCoords(self,droneLat,droneLong,plantCoords,imageX,imageY):
+        imageRatio = float(float(imageX) / float(imageY))
+        edges = self.getEdges(droneLat,droneLong,imageRatio)
         return edges
 ##        ratioList = [] # list of tuples that represent the ratio which coordinates are from the center to the edge
 ##        for x,y in plantCoords:
