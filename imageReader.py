@@ -3,37 +3,15 @@ Image Reader
 Copyright 2017: Morgan West
 """
 
-##import exifread # reads file metadata
+# TODO: Find a library to read in metadata/exifdata that puts the data in a usable format.
+#   ExifRead puts the data into an unusable format that cannot be changed or manipulated and can
+#   only be printed.
+
 import coordFinder as crdfdr # class to calculate coordinates of selected plants in images
 
-# We want latitude, longitude, width of picture, length of picture
-# GPS GPSLatitude, GPS GPSLongitude, Image XResolution, Image YResolution
-
-# TODO: Figure out why trying to create tuples turns into IfdTags
-##f = open(str('DJI_0074.jpg'), 'rb')
-##tags = exifread.process_file(f,strict=True)
-##for entry in tags:
-##    print entry
-##print tags['GPS GPSLatitude']
-##print tags['GPS GPSLongitude']
-##print tags['EXIF ExifImageWidth']
-##print tags['EXIF ExifImageLength']
-##droneLat = tags['GPS GPSLatitude']
-##droneLong = tags['GPS GPSLongitude']
-##imageX = tags['EXIF ExifImageWidth']
-##imageY = tags['EXIF ExifImageLength']
-##print droneLat
-##print droneLong
-##print imageX
-##print imageY
-##droneCoords = (droneLat, droneLong)
-##print droneCoords
-##imageResolution = (imageX, imageY)
-##print "Res",imageResolution
-##print "Coords",droneCoords
 c = crdfdr.CoordFinder(94,0,30) # 94 FOV, 0 direction, 30 meter hight
-edges = c.processCoords([19,28,float(267777/5000)],[154,56,float(36523/625)],0,4000,3000)
-print("N",edges[0])
-print("E",edges[1])
-print("S",edges[2])
-print("W",edges[3])
+coords = ([19,28,float(267777/5000)],[154,56,float(36523/625)])
+imageDims = (4000,3000)
+plantCoords = (1000,2000)
+coords = c.processCoords(coords,plantCoords,imageDims)
+print(coords)
