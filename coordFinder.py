@@ -89,7 +89,7 @@ class CoordFinder:
 
     # Finds the midpoint of the coordinates calculated for multiple images that contain the same
     #   geographic location.
-    def triangulate(self,coordinates):
+    def midpoint(self,coordinates):
         xsum = 0
         ysum = 0
         for coord in coordinates:
@@ -102,52 +102,38 @@ class CoordFinder:
     # Function for processing real life UTM coordinates given image and image coordinates of
     #   detected plants.
     def processCoords(self,droneCoords,plantCoords,imageDims):
+
+        #defining and setting values for variables
         imageRatio = float(imageDims[0] / imageDims[1])        
         edges = self.getEdges(droneCoords,imageRatio)
         edgeN = edges[0]
         edgeE = edges[1]
         edgeS = edges[2]
         edgeW = edges[3]
-        origin = (imageDims[0]/2, imageDims[1]/2) # the center coordinate of the image
-        xratio = float(plantCoords[0] - origin[0]) / imageDims[0]
-        yratio = float(plantCoords[1] - origin[1]) / imageDims[1]
-        ddcoords = self.toDecimalDegrees(droneCoords)
-        #quadrant 1
-        if plantCoords[0] > origin[0] and plantCoords[1] > origin[1]:
-            xcoord = ddcoords[0] + (xratio * edgeE[0])
-            ycoord = ddcoords[1] + (yratio * edgeN[1])
-        #quadrant 2
-        if plantCoords[0] < origin[0] and plantCoords[1] > origin[1]:
-            xcoord = ddcoords[0] + (xratio * edgeW[0])
-            ycoord = ddcoords[1] + (yratio * edgeN[1])
-        #quadrant 3
-        if plantCoords[0] < origin[0] and plantCoords[1] < origin[1]:
-            xcoord = ddcoords[0] + (xratio * edgeW[0])
-            ycoord = ddcoords[1] + (yratio * edgeS[1])
-        #quadrant 4
-        if plantCoords[0] > origin[0] and plantCoords[1] < origin[1]:
-            xcoord = ddcoords[0] + (xratio * edgeE[0])
-            ycoord = ddcoords[1] + (yratio * edgeS[1])
-        #positive x axis
-        if plantCoords[0] > origin[0] and plantCoords[1] == origin[1]:
-            xcoord = ddcoords[0] + (xratio * edgeE[0])
-            ycoord = ddcoords[1]
-        #positive y axis
-        if plantCoords[0] == origin[0] and plantCoords[1] > origin[1]:
-            xcoord = ddcoords[0]
-            ycoord = ddcoords[1] + (yratio * edgeN[1])
-        #negative x axis
-        if plantCoords[0] < origin[0] and plantCoords[1] == origin[1]:
-            xcoord = ddcoords[0] + (xratio * edgeW[0])
-            ycoord = ddcoords[1]
-        #negative y axis
-        if plantCoords[0] == origin[0] and plantCoords[1] < origin[1]:
-            xcoord = ddcoords[0]
-            ycoord = ddcoords[1] + (yratio * edgeS[1])
-        #origin
-        if plantCoords[0] == origin[0] and plantCoords[1] == origin[1]:
-            xcoord = ddcoords[0]
-            ycoord = ddcoords[1]
+        realCoordsX = 0 # these should not be 0 when returned
+        realCoordsY = 0 # /
+        imageOrigin = (imageDims[0]/2, imageDims[1]/2) # middle of the picture in image coords
+
+        #calculating distances and ratios
+        distWE = math.abs(edgeW[0] - edgeE[0])
+        distNS = math.abs(edgeN[1] - edgeS[1])
+        xratio = imageCoords[0]/imageDims[0]
+        yratio = imageCoords[1]/imageDims[1]
+        ratioWE = distWE * xratio
+        ratioNS = distNS * yratio
+
+        #calculating coordinates with ratios
+        if plantCoords[0] < imageOrigin[0]:
+            realCoordsX = droneCoords[0] + ((distWE/2) - (distWE * xratio))
+        if plantCoords[0] > imageOrigin[0]:
+            realCoordsX = edgeW[0] - (distWE * xratio)
+        if plantCoords[0] == imageOrigin[0]:
+            realCoordsX = droneCoords[0]
+        realCoordsY = edgeN[1] - (distNS * yratio)
+        
+        for edge in edges:
+            print(edge)
+        print("COORDS: ", xcoord, ycoord)
         UTMcoords = self.toUTM((xcoord,ycoord))
         return UTMcoords
                 
