@@ -1,3 +1,5 @@
+# Dummy standin file for predictions
+
 import os;
 
 def predictions(rootdir):
