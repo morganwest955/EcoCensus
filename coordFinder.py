@@ -34,7 +34,6 @@ class CoordFinder:
         longitude = droneCoords[1]
         newLatitude = float(latitude[0] + float(latitude[1] / 60) + float(latitude[2] / 3600))
         newLongitude = float(longitude[0] + float(longitude[1] / 60) + float(longitude[2] / 3600))
-        ##print(newLatitude, newLongitude)
         return (newLatitude,newLongitude)
 
     # Converts decimal degrees to universal transverse mercador in zone 5Q (Big Island).
@@ -46,33 +45,33 @@ class CoordFinder:
 
     # Takes the coordinate given from the image data and calculates the edge
     def getEdges(self,droneCoords,imageRatio):
+        # defining and setting variables
         droneDD = self.toDecimalDegrees(droneCoords)
         droneLat = droneDD[0]
         droneLong = droneDD[1]
         edges = [] # list of edges [top, right, bottom, left]
         distToEdge = float(self.droneHeight*math.tan(self.theta))
-        # convert from meters to decimal degrees: 1.0247 meter = 0.00001 dd
+        
+        # conversion from meters to decimal degrees
         # 1 m = 0.0004858 dd
-        distToEdge = float(distToEdge * 0.0004858) # conversion from meters to decimal degrees
-        # edges assuming orientation is north-up
-        # directional calculation & distance
-        # x' = xcos(phi)-ysin(phi)
-        # y' = ycos(phi)+xsin(phi)
-        # TODO: fix the math because it ain't right
+        distToEdge = float(distToEdge * 0.0004858)
+
+        # edge calculations assuming orientation is north-up
         NSdistToEdge = float(distToEdge * imageRatio) # since the image is wider than it is tall
-        print(droneLat)
-        northx = droneLat - (NSdistToEdge * math.sin(self.phi))
-        northy = droneLong + NSdistToEdge * math.cos(self.phi)
-        westx = droneLat + -distToEdge * math.cos(self.phi)
-        westy = droneLong + (-distToEdge * math.sin(self.phi))
-        southx = droneLat - (-NSdistToEdge * math.sin(self.phi))
-        southy = droneLong + -NSdistToEdge * math.cos(self.phi)
-        eastx = droneLat + distToEdge * math.cos(self.phi)
-        easty = droneLong + (distToEdge * math.sin(self.phi))
-        edges.append((northx,northy)) # N
-        edges.append((westx,westy)) # E
-        edges.append((southx,southy)) # S
-        edges.append((eastx,easty)) # W
+        northx = droneLat
+        northy = droneLong + NSdistToEdge 
+        westx = droneLat + distToEdge
+        westy = droneLong
+        southx = droneLat
+        southy = droneLong - NSdistToEdge
+        eastx = droneLat - distToEdge
+        easty = droneLong
+
+        # add coordinates to list in NESW order
+        edges.append((northx,northy))   # N
+        edges.append((westx,westy))     # E
+        edges.append((southx,southy))   # S
+        edges.append((eastx,easty))     # W
         return edges
 
     # This is a function to test the edge function for accuracy.
@@ -98,6 +97,16 @@ class CoordFinder:
         xcoord = xsum / len(coordinates)
         ycoord = ysum / len(coordinates)
         return (xcoord,ycoord)
+
+    # Rotates the coordinate around the origin (droneCoords) of the image to match direcitonal rotation
+    def rotate(self,coords):
+        xcoord = coords[0]
+        ycoord = coords[1]
+        # x' = xcos(phi)-ysin(phi)
+        # y' = ycos(phi)+xsin(phi)
+        newCoordX = xcoord * math.cos(self.phi) - ycoord * math.sin(self.phi)
+        newCoordY = ycoord * math.cos(self.phi) - xcoord * math.sin(self.phi)
+        return newCoords
     
     # Function for processing real life UTM coordinates given image and image coordinates of
     #   detected plants.
@@ -115,25 +124,27 @@ class CoordFinder:
         imageOrigin = (imageDims[0]/2, imageDims[1]/2) # middle of the picture in image coords
 
         #calculating distances and ratios
-        distWE = math.abs(edgeW[0] - edgeE[0])
-        distNS = math.abs(edgeN[1] - edgeS[1])
-        xratio = imageCoords[0]/imageDims[0]
-        yratio = imageCoords[1]/imageDims[1]
+        distWE = math.fabs(edgeW[0] - edgeE[0])
+        distNS = math.fabs(edgeN[1] - edgeS[1])
+        xratio = plantCoords[0]/imageDims[0]
+        yratio = plantCoords[1]/imageDims[1]
         ratioWE = distWE * xratio
         ratioNS = distNS * yratio
 
         #calculating coordinates with ratios
         if plantCoords[0] < imageOrigin[0]:
-            realCoordsX = droneCoords[0] + ((distWE/2) - (distWE * xratio))
+            realCoordsX = droneCoords[0] + (distWE/2) - (distWE * xratio)
         if plantCoords[0] > imageOrigin[0]:
             realCoordsX = edgeW[0] - (distWE * xratio)
         if plantCoords[0] == imageOrigin[0]:
             realCoordsX = droneCoords[0]
         realCoordsY = edgeN[1] - (distNS * yratio)
+
+        newCoords = self.rotate((realCoordsX, realCoordsY)) # rotate coordinates along origin for direction
         
         for edge in edges:
             print(edge)
-        print("COORDS: ", xcoord, ycoord)
-        UTMcoords = self.toUTM((xcoord,ycoord))
+        print("COORDS: ", newCoords[0], newCoords[1])
+        UTMcoords = self.toUTM((realCoords[0],realCoords[1]))
         return UTMcoords
                 
