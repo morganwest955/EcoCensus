@@ -1,0 +1,7 @@
+#include <iostream>
+
+int main(){
+    system("cd && source tensorflow/bin/activate && cd /Users/bound_to_love/Downloads/EcoCensus-master/CurrentImplementation07122017 && python /Users/bound_to_love/Downloads/EcoCensus-master/CurrentImplementation07122017/predictions.py");
+    
+    return 0;
+}
