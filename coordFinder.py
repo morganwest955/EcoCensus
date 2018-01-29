@@ -44,9 +44,8 @@ class CoordFinder:
         return utm.from_latlon(latitude,longitude) # see documentation for utm library
 
     # Takes the coordinate given from the image data and calculates the edge
-    def getEdges(self,droneCoords,imageRatio):
+    def getEdges(self,droneDD,imageRatio):
         # defining and setting variables
-        droneDD = self.toDecimalDegrees(droneCoords)
         droneLat = droneDD[0]
         droneLong = droneDD[1]
         edges = [] # list of edges [top, right, bottom, left]
@@ -81,7 +80,8 @@ class CoordFinder:
         droney = droneDD[1]
         distances = []
         for edge in edges:
-            distances.append(math.sqrt((dronex - edge[0])**2 + (droney - edge[1])**2))
+            rotatedEdge = self.rotate(edge)
+            distances.append(math.sqrt((dronex - rotatedEdge[0])**2 + (droney - rotatedEdge[1])**2))
         for distance in distances:
             print(distance)
         return
@@ -99,21 +99,32 @@ class CoordFinder:
         return (xcoord,ycoord)
 
     # Rotates the coordinate around the origin (droneCoords) of the image to match direcitonal rotation
-    def rotate(self,coords):
-        xcoord = coords[0]
-        ycoord = coords[1]
+    #       of the drone.
+    def rotate(self, coords, origin):
+
+        # change image coordinates to emulate the center of the image as (0,0)
+        xcoord = float(coords[0] - origin[0])
+        ycoord = float(coords[1] - origin[1])
+
+        # rotate coordinates around new origin
         # x' = xcos(phi)-ysin(phi)
-        # y' = ycos(phi)+xsin(phi)
-        newCoordX = xcoord * math.cos(self.phi) - ycoord * math.sin(self.phi)
-        newCoordY = ycoord * math.cos(self.phi) - xcoord * math.sin(self.phi)
-        return newCoords
+        # y' = ycos(phi)+xsin(phi)       
+        newCoordX = float(xcoord * math.cos(self.phi) - ycoord * math.sin(self.phi))
+        newCoordY = float(ycoord * math.cos(self.phi) - xcoord * math.sin(self.phi))
+
+        # calculate the slope of the line needed to get to that coordinate from the origin
+        # m = (y2-y1/x2-x1)
+        m = float((newcoordy-ycoord)/(newCoordX-xcoord))
+        
+        return (newCoordX, newCoordY)
     
     # Function for processing real life UTM coordinates given image and image coordinates of
     #   detected plants.
     def processCoords(self,droneCoords,plantCoords,imageDims):
 
         #defining and setting values for variables
-        imageRatio = float(imageDims[0] / imageDims[1])        
+        imageRatio = float(imageDims[0] / imageDims[1])
+        droneCoords = self.toDecimalDegrees(droneCoords)
         edges = self.getEdges(droneCoords,imageRatio)
         edgeN = edges[0]
         edgeE = edges[1]
@@ -122,29 +133,32 @@ class CoordFinder:
         realCoordsX = 0 # these should not be 0 when returned
         realCoordsY = 0 # /
         imageOrigin = (imageDims[0]/2, imageDims[1]/2) # middle of the picture in image coords
+        latitude = droneCoords[0]
+        longitude = droneCoords[1]
+
+        # rotate coordinates along origin for direction
+        plantCoords = self.rotate(plantCoords, imageOrigin)
 
         #calculating distances and ratios
         distWE = math.fabs(edgeW[0] - edgeE[0])
         distNS = math.fabs(edgeN[1] - edgeS[1])
-        xratio = plantCoords[0]/imageDims[0]
-        yratio = plantCoords[1]/imageDims[1]
+        xratio = float(plantCoords[0]/imageDims[0])
+        yratio = float(plantCoords[1]/imageDims[1])
         ratioWE = distWE * xratio
         ratioNS = distNS * yratio
 
         #calculating coordinates with ratios
         if plantCoords[0] < imageOrigin[0]:
-            realCoordsX = droneCoords[0] + (distWE/2) - (distWE * xratio)
+            realCoordsX = latitude + (distWE / 2) - (distWE * xratio)
         if plantCoords[0] > imageOrigin[0]:
             realCoordsX = edgeW[0] - (distWE * xratio)
         if plantCoords[0] == imageOrigin[0]:
-            realCoordsX = droneCoords[0]
-        realCoordsY = edgeN[1] - (distNS * yratio)
-
-        newCoords = self.rotate((realCoordsX, realCoordsY)) # rotate coordinates along origin for direction
+            realCoordsX = latitude
+        realCoordsY = edgeN[1] + (distNS * yratio)        
         
         for edge in edges:
             print(edge)
-        print("COORDS: ", newCoords[0], newCoords[1])
-        UTMcoords = self.toUTM((realCoords[0],realCoords[1]))
+        print("COORDS: ", realCoordsX, realCoordsY)
+        UTMcoords = self.toUTM((realCoordsX,realCoordsY))
         return UTMcoords
                 
