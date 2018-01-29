@@ -112,10 +112,9 @@ class CoordFinder:
         newCoordX = float(xcoord * math.cos(self.phi) - ycoord * math.sin(self.phi))
         newCoordY = float(ycoord * math.cos(self.phi) - xcoord * math.sin(self.phi))
 
-        # calculate the slope of the line needed to get to that coordinate from the origin
-        # m = (y2-y1/x2-x1)
-        m = float((newcoordy-ycoord)/(newCoordX-xcoord))
-        
+        # move back the origin and return the coordinates
+        newCoordX += origin[0]
+        newCoordY += origin[1]      
         return (newCoordX, newCoordY)
     
     # Function for processing real life UTM coordinates given image and image coordinates of
@@ -126,33 +125,36 @@ class CoordFinder:
         imageRatio = float(imageDims[0] / imageDims[1])
         droneCoords = self.toDecimalDegrees(droneCoords)
         edges = self.getEdges(droneCoords,imageRatio)
+        imageOrigin = (imageDims[0]/2, imageDims[1]/2) # middle of the picture in image coords
         edgeN = edges[0]
         edgeE = edges[1]
         edgeS = edges[2]
         edgeW = edges[3]
         realCoordsX = 0 # these should not be 0 when returned
         realCoordsY = 0 # /
-        imageOrigin = (imageDims[0]/2, imageDims[1]/2) # middle of the picture in image coords
         latitude = droneCoords[0]
         longitude = droneCoords[1]
 
         # rotate coordinates along origin for direction
-        plantCoords = self.rotate(plantCoords, imageOrigin)
+        #plantCoords = self.rotate(plantCoords, imageOrigin)
+        xcoord, ycoord = self.rotate(plantCoords, imageOrigin)
 
+        # calculate distance from origin
+        
         #calculating distances and ratios
         distWE = math.fabs(edgeW[0] - edgeE[0])
         distNS = math.fabs(edgeN[1] - edgeS[1])
-        xratio = float(plantCoords[0]/imageDims[0])
-        yratio = float(plantCoords[1]/imageDims[1])
+        xratio = float(xcoord/imageDims[0])
+        yratio = float(ycoord/imageDims[1])
         ratioWE = distWE * xratio
         ratioNS = distNS * yratio
 
         #calculating coordinates with ratios
-        if plantCoords[0] < imageOrigin[0]:
+        if xcoord < imageOrigin[0]:
             realCoordsX = latitude + (distWE / 2) - (distWE * xratio)
-        if plantCoords[0] > imageOrigin[0]:
+        if xcoord > imageOrigin[0]:
             realCoordsX = edgeW[0] - (distWE * xratio)
-        if plantCoords[0] == imageOrigin[0]:
+        if xcoord == imageOrigin[0]:
             realCoordsX = latitude
         realCoordsY = edgeN[1] + (distNS * yratio)        
         
