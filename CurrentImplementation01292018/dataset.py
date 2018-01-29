@@ -1,3 +1,7 @@
+"""
+Creating training data set 
+Copyright 2017: Rebekah Loving
+"""
 import cv2
 import os
 import glob
