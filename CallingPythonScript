@@ -1,7 +1,43 @@
 #include <iostream>
+#include <iomanip>
 #include <cstdlib>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <stdio.h>
 
 int main(){
+    
+    std::string directoryInput, directoryOutput;
+    
+    std::fstream modifyPythonScript;
+    std::ofstream copyPythonScript;
+    
+    modifyPythonScript.open("/Users/bound_to_love/Downloads/EcoCensus-master/CurrentImplementation07122017/predictions.py");
+    copyPythonScript.open("/Users/bound_to_love/Downloads/EcoCensus-master/CurrentImplementation07122017/predictions_copy.py");
+    
+    std::cin >> directoryInput >> directoryOutput;
+    
+    std::string line;
+    for(int i = 0; i < 7; i++){
+        std::getline(modifyPythonScript, line);
+        copyPythonScript << line << std::endl;
+    }
+    std:: stringstream directoryInput1, directoryInput2;
+    std::getline(modifyPythonScript, line);
+    directoryInput1 << "rootdir = os.path.dirname('" << directoryInput << "')" << std::setw(80) << std::endl;
+    copyPythonScript << directoryInput1.str();
+    std::getline(modifyPythonScript, line);
+    directoryInput2 << "directory = os.path.dirname('" << directoryOutput << "')" << std::setw(80) << std::endl;
+    copyPythonScript << directoryInput2.str();
+    while(std::getline(modifyPythonScript, line)){
+        copyPythonScript << line << std::endl;
+    }
+    copyPythonScript.close();
+    modifyPythonScript.close();
+    remove("/Users/bound_to_love/Downloads/EcoCensus-master/CurrentImplementation07122017/predictions.py");
+    rename("/Users/bound_to_love/Downloads/EcoCensus-master/CurrentImplementation07122017/predictions_copy.py", "/Users/bound_to_love/Downloads/EcoCensus-master/CurrentImplementation07122017/predictions.py");
+    
     system("cd && source tensorflow/bin/activate && cd /Users/bound_to_love/Downloads/EcoCensus-master/CurrentImplementation07122017 && python /Users/bound_to_love/Downloads/EcoCensus-master/CurrentImplementation07122017/predictions.py");
     
     return 0;
