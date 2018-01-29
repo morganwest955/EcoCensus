@@ -1,3 +1,7 @@
+"""
+Training Convolutional Neural Network
+Copyright 2017: Rebekah Loving
+"""
 import dataset
 import tensorflow as tf
 import time
