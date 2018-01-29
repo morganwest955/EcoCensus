@@ -73,19 +73,6 @@ class CoordFinder:
         edges.append((eastx,easty))     # W
         return edges
 
-    # This is a function to test the edge function for accuracy.
-    def testEdges(self, edges, droneCoords):
-        droneDD = self.toDecimalDegrees(droneCoords)
-        dronex = droneDD[0]
-        droney = droneDD[1]
-        distances = []
-        for edge in edges:
-            rotatedEdge = self.rotate(edge)
-            distances.append(math.sqrt((dronex - rotatedEdge[0])**2 + (droney - rotatedEdge[1])**2))
-        for distance in distances:
-            print(distance)
-        return
-
     # Finds the midpoint of the coordinates calculated for multiple images that contain the same
     #   geographic location.
     def midpoint(self,coordinates):
@@ -158,9 +145,6 @@ class CoordFinder:
             realCoordsX = latitude
         realCoordsY = edgeN[1] + (distNS * yratio)        
         
-        for edge in edges:
-            print(edge)
-        print("COORDS: ", realCoordsX, realCoordsY)
         UTMcoords = self.toUTM((realCoordsX,realCoordsY))
-        return UTMcoords
+        return (UTMcoords, (realCoordsX, realCoordsY))
                 
