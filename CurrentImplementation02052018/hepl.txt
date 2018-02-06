@@ -1,5 +1,0 @@
-unresolved external (library): clean, run qmake, rebuild
-
-grab filtered list from both folders
-concatenate the lists
-sort them by name
