@@ -43,6 +43,10 @@ class CoordFinder:
         longitude = coords[1]
         return utm.from_latlon(latitude,longitude) # see documentation for utm library
 
+    # Takes in UTM coordinates and outputs decimal degree coordinates
+    def fromUTM(self,coords):
+        return utm.to_latlon(coords)
+
     # Takes the coordinate given from the image data and calculates the edge
     def getEdges(self,droneDD,imageRatio):
         # defining and setting variables
@@ -108,9 +112,30 @@ class CoordFinder:
     #   detected plants.
     def processCoords(self,droneCoords,plantCoords,imageDims):
 
-        #defining and setting values for variables
+        # type checking
+        tupleType = type((0,0))
+        floatType = type(1.01)
+        listType = type([1,2,3])
+        if (type(droneCoords) == tupleType):
+            tupleSize = len(droneCoords) # size of 2 means either geo or decimal coordinates.  4 is UTM
+            if (tupleSize == 4):
+                # convert the coordinates from UTM to decimal
+                droneCoords = self.fromUTM(droneCoords)
+            elif (tupleSize == 2):
+                if (type(droneCoords[0]) == listType and len(droneCoords[0]) == 3):
+                    # is geo coords.  Change to decimal for calculations
+                    droneCoords = self.toDecimalDegrees(droneCoords)
+                elif (type(droneCoords[0]) == floatType):
+                    droneCoords = droneCoords # because a line of code needs to be here
+                else:
+                    return
+            else:
+                return
+        else:
+            return
+                
+        # defining and setting values for variables
         imageRatio = float(imageDims[0] / imageDims[1])
-        droneCoords = self.toDecimalDegrees(droneCoords)
         edges = self.getEdges(droneCoords,imageRatio)
         imageOrigin = (imageDims[0]/2, imageDims[1]/2) # middle of the picture in image coords
         edgeN = edges[0]
@@ -123,10 +148,8 @@ class CoordFinder:
         longitude = droneCoords[1]
 
         # rotate coordinates along origin for direction
-        #plantCoords = self.rotate(plantCoords, imageOrigin)
+        # plantCoords = self.rotate(plantCoords, imageOrigin)
         xcoord, ycoord = self.rotate(plantCoords, imageOrigin)
-
-        # calculate distance from origin
         
         #calculating distances and ratios
         distWE = math.fabs(edgeW[0] - edgeE[0])
@@ -136,7 +159,7 @@ class CoordFinder:
         ratioWE = distWE * xratio
         ratioNS = distNS * yratio
 
-        #calculating coordinates with ratios
+        # calculating coordinates with ratios
         if xcoord < imageOrigin[0]:
             realCoordsX = latitude + (distWE / 2) - (distWE * xratio)
         if xcoord > imageOrigin[0]:
@@ -144,7 +167,8 @@ class CoordFinder:
         if xcoord == imageOrigin[0]:
             realCoordsX = latitude
         realCoordsY = edgeN[1] + (distNS * yratio)        
-        
+
+        print(realCoordsX, realCoordsY)
         UTMcoords = self.toUTM((realCoordsX,realCoordsY))
         return (UTMcoords, (realCoordsX, realCoordsY))
                 

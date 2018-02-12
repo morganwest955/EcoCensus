@@ -9,9 +9,20 @@ Copyright 2017: Morgan West
 
 import coordFinder as crdfdr # class to calculate coordinates of selected plants in images
 
-c = crdfdr.CoordFinder(94,0,30) # 94 FOV, 0 direction, 30 meter hight
-coords = ([19,28,float(267777/5000)],[154,56,float(36523/625)])
+c = crdfdr.CoordFinder(94,30,30) # 94 FOV, 30 direction, 30 meter hight
+coords = ([19,28,53.555],[154,56,58.437])
 imageDims = (4000,3000)
-plantCoords = (1000,2000)
-coords = c.processCoords(coords,plantCoords,imageDims)
-print(coords)
+plantCoords = (1900,2136)
+
+noneType = type(None)
+coords1 = c.processCoords(coords,plantCoords,imageDims)
+coords = ([19,28,53.555],[154,56,58.437])
+if (type(coords) == noneType):
+    print("invalid input")
+plantCoords = (1900,2136)
+coords2 = c.processCoords(coords,plantCoords,imageDims)
+mid = c.midpoint((coords1[1], coords2[1]))
+print(mid)
+point = c.toUTM(mid)
+print(point)
+
