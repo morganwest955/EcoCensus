@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/ui/buttons">
+        <file>transparency_swatch.gif</file>
+    </qresource>
+</RCC>
