@@ -223,7 +223,7 @@ void EcoCensus::populateList_Partitions(vector<BoxInfo> &list, QString fileName)
             info.pencolor = ct->getColorValue();
             // xy
             QStringList pieces = file.split('_');
-            int offset = 1;
+            int offset = 0;
             info.x = pieces.at(1 + offset).toInt();
             info.y = pieces.at(0 + offset).toInt();
             // wh
