@@ -32,8 +32,6 @@ SOURCES += \
     colortest.cpp
 
 HEADERS += \
-    Test.h \
-    ecpy.h \
     errordialog.h \
     dialog.h \
     EcoCensus.h \
@@ -45,13 +43,6 @@ FORMS += \
     errordialog.ui \
     dialog.ui \
     colortest.ui
-
-
-win32: LIBS += -L$$PWD/../../source/repos/TestDLL/x64/Release/ -lTestDLL2
-win32: LIBS += -L$$PWD/../../source/repos/TestDLL/x64/Release/ -lEcoCensusPy
-
-INCLUDEPATH += $$PWD/../../source/repos/TestDLL/x64/Release
-DEPENDPATH += $$PWD/../../source/repos/TestDLL/x64/Release
 
 RESOURCES += \
     resources.qrc
