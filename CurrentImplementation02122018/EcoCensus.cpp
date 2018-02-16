@@ -14,6 +14,8 @@
 #include <QPainter>
 #include "colortest.h"
 
+int DEBUG = 4;
+
 EcoCensus::EcoCensus(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::EcoCensus)
@@ -139,10 +141,10 @@ void EcoCensus::on_button_predict_clicked()
     // Predict on the directories
     predictions(rootbuf, destbuf);
     // collect folder names in a list
-    QString resultDir = dest + d2;
+    QString resultDir = dest;// + d2;
     QDir dir(resultDir);
     QStringList results = dir.entryList(QStringList(), QDir::Dirs | QDir::NoDotAndDotDot);
-    qDebug() << results;
+    if (DEBUG >= 3) qDebug() << results;
 
     // create all of the result folder widgets
     // clear previous
@@ -153,7 +155,9 @@ void EcoCensus::on_button_predict_clicked()
                 [&resultDir, capthis](QString item){
         // item is the folder name, stored in the Label
         // store the full folder path in the UserRole data
-        if (item == "Negative") {
+        if (item == "Partitions") {
+            // do nothing
+        } else if (item == "Negative") {
             capthis->addColorListWidget(item, resultDir + "/" + item, Qt::transparent);
         } else {
             capthis->addColorListWidget(item, resultDir + "/" + item, capthis->getAColor());
@@ -223,21 +227,21 @@ void EcoCensus::populateList_Partitions(vector<BoxInfo> &list, QString fileName)
             info.pencolor = ct->getColorValue();
             // xy
             QStringList pieces = file.split('_');
-            int offset = 0;
+            int offset = 1;
             info.x = pieces.at(1 + offset).toInt();
             info.y = pieces.at(0 + offset).toInt();
             // wh
-            //QString curFile = dirPath + "/" + file;
-            //qDebug() << curFile;
-            //QImageReader curImg(curFile);
-            //QSize sz = curImg.size();
-            //qDebug() << "size: " << sz;
-            //info.w = sz.width();
-            //info.h = sz.height();
+            QString curFile = dirPath + "/" + file;
+            qDebug() << curFile;
+            QImageReader curImg(curFile);
+            QSize sz = curImg.size();
+            qDebug() << "size: " << sz;
+            info.w = (sz.width() / 10) - 1;
+            info.h = (sz.height() / 10) - 1;
             // until we get the jpg headers fixed in the partitioning, the
             // automatic size getting won't work
-            info.w = 300;
-            info.h = 300;
+            //info.w = 300;
+            //info.h = 300;
             // push the result to the list
             list.push_back(info);
         });
@@ -300,7 +304,7 @@ void EcoCensus::on_listWidget_itemClicked(QListWidgetItem *item)
                 boxes.begin(),
                 boxes.end(),
                 [&painter](BoxInfo item){
-
+/*
         qDebug() <<
                     item.pencolor << ", " <<
                     item.x << ", " <<
@@ -308,9 +312,15 @@ void EcoCensus::on_listWidget_itemClicked(QListWidgetItem *item)
                     item.w << ", " <<
                     item.h << ", " <<
                     "";
+                    */
         // create a pen
+        QPen pen;
+        pen.setColor((item.pencolor));
+        pen.setWidth(10);
+        pen.setCapStyle(Qt::RoundCap);
+        pen.setJoinStyle(Qt::MiterJoin);
         // insert the correct color here
-        painter.setPen(item.pencolor);
+        painter.setPen(pen);
         //painter.
         // insert the correct posx, posy, szx, szy
         painter.drawRect(item.x, item.y, item.w, item.h);
