@@ -11,20 +11,16 @@
 #include <QSettings>
 #include <QDesktopServices>
 #include <QThread>
+#include <QPainter>
+#include "colortest.h"
 
-
-int thumbsz = 200;
-int partsz = 200;
+int DEBUG = 2;
 
 EcoCensus::EcoCensus(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::EcoCensus)
 {
     ui->setupUi(this);
-    ui->grid->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->grid->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-
-    //blockDialog->setWindowModality(Qt::WindowModal);
 }
 
 EcoCensus::~EcoCensus()
@@ -32,97 +28,156 @@ EcoCensus::~EcoCensus()
     delete ui;
 }
 
+void EcoCensus::addColorListWidget(QString label, QColor color)
+{
+    QListWidgetItem* lwi = new QListWidgetItem(ui->dirList);
+    ColorTest* ct = new ColorTest;
+    ct->setLabelText(label);
+    ct->setColorValue(color);
+    lwi->setSizeHint(ct->sizeHint());
+    ui->dirList->setItemWidget(lwi, ct);
+}
+
+void EcoCensus::addColorListWidget(QString label, QString userdata, QColor color)
+{
+    QListWidgetItem* lwi = new QListWidgetItem(ui->dirList);
+    ColorTest* ct = new ColorTest;
+    ct->setLabelText(label);
+    ct->setColorValue(color);
+    lwi->setData(Qt::UserRole, userdata);
+    lwi->setSizeHint(ct->sizeHint());
+    ui->dirList->setItemWidget(lwi, ct);
+}
+
+void EcoCensus::addPicListWidget(QString label, QString filePath)
+{
+    static int thumbsize = 100;
+    // load an image
+    QImageReader cimg(filePath);
+    if (!cimg.canRead()) {
+        ErrorDialog error(this, "No Image!!");
+        error.setModal(true);
+        error.exec();
+    } else {
+        // fix size
+        int newwd = thumbsize;
+        int newht = thumbsize;
+        double scalar = 1.0;
+        QSize cimgsize = cimg.size();
+        if (cimgsize.width() >= cimgsize.height()) {
+            // Width Bigger or equal
+            if (cimgsize.width() > thumbsize) {
+                scalar = double(thumbsize) / double(cimgsize.width());
+                newht = int(round(scalar * cimgsize.height()));
+            }
+        } else {
+            // Height Bigger
+            if (cimgsize.height() > thumbsize) {
+                scalar = double(thumbsize) / double(cimgsize.height());
+                newwd = int(round(scalar * cimgsize.width()));
+            }
+        }
+        cimg.setScaledSize(QSize(newwd, newht));
+        // end fix size
+        QImage cimgdata = cimg.read();
+        QListWidgetItem* imgitem = new QListWidgetItem(label, ui->listWidget);
+        imgitem->setData(Qt::DecorationRole, cimgdata);
+        imgitem->setData(Qt::UserRole, filePath);
+    }
+}
+
+QString EcoCensus::getALabel()
+{
+    static int num = 0;
+    return QStringLiteral("Label%1").arg(num++);
+}
+
+QColor EcoCensus::getAColor()
+{
+    static int h = 0;
+    static int s = 255;
+    static int v = 255;
+    static int a = 255;
+    QColor result;
+    result.setHsv(h, s, v, a);
+    h += 53;
+    h = h % 360;
+    return result;
+}
+
 void EcoCensus::on_openButton_clicked()
 {
     QFileDialog* asdf = new QFileDialog();
-    ui->urlLabel->setText(asdf->getExistingDirectory(this, tr("Open Dir"), "./", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks));
+    ui->rootUrl->setText(asdf->getExistingDirectory(this, tr("Open Dir"), "./", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks));
 }
 
 void EcoCensus::on_getDirPos_clicked()
 {
     QFileDialog* asdf = new QFileDialog();
-    ui->lineEdit->setText(asdf->getExistingDirectory(this, tr("Open Dir"), "./", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks));
-}
-
-void EcoCensus::populateGrid() {
-    int thumbsize = thumbsz;
-    QString d1 = "/Partitions";
-    QString d2 = "/Predictions_v2";
-    QString dp = "/Positive";
-    QString dn = "/Negative";
+    ui->destUrl->setText(asdf->getExistingDirectory(this, tr("Open Dir"), "./", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks));
 }
 
 void EcoCensus::on_button_predict_clicked()
 {
-    int thumbsize = thumbsz;
+    // get a copy of "this" for the lambda functions to use
+    auto* capthis = (this);
+    // ROOT/Partitions
+    // DEST/Predictions/RESULT
+    // QByteArray array = str.toLocal8Bit();
+
     QString d1 = "/Partitions";
     QString d2 = "/Predictions";
-    QString dp = "/Positive";
-    QString dn = "/Negative";
 
-    // DIR/Partitions/Predictions_v2/OUTCOME/
+    // Root URL to char*
+    QString root = ui->rootUrl->text();
+    char* rootbuf = root.toLocal8Bit().data();
+    // Destination URL to char*
+    QString dest = ui->destUrl->text();
+    if (dest.isEmpty()) {
+        dest = root;
+    }
+    char* destbuf = dest.toLocal8Bit().data();
 
-    QString dirtext = ui->urlLabel->text();
-    QByteArray array = dirtext.toLocal8Bit();
-    char* buffer = array.data();
-    QString dirtextoutput = ui->lineEdit->text();
-    QByteArray array2 = dirtextoutput.toLocal8Bit();
-    char* buffer2 = array2.data();
-    predictions(buffer, buffer2);
-    QString d3 = dirtext + d2;
+    // Predict on the directories
+    predictions(rootbuf, destbuf);
+    // collect folder names in a list
+    QString resultDir = dest;// + d2;
+    QDir dir(resultDir);
+    QStringList results = dir.entryList(QStringList(), QDir::Dirs | QDir::NoDotAndDotDot);
+    if (DEBUG >= 3) qDebug() << results;
+
+    // create all of the result folder widgets
+    // clear previous
     ui->dirList->clear();
-    QListWidgetItem* Pos = new QListWidgetItem(dp, ui->dirList);
-    Pos->setData(Qt::UserRole, d3 + dp);
-    //Pos->setText(dp);
-    //ui->dirList->addItem(Pos);
-    QListWidgetItem* Neg = new QListWidgetItem(dn, ui->dirList);
-    Neg->setData(Qt::UserRole, d3 + dn);
-    //Pos->setText(dn);
-    //ui->dirList->addItem(Neg);
+    std::for_each(
+                results.begin(),
+                results.end(),
+                [&dir, capthis](QString item){
+        // item is the folder name, stored in the Label
+        // store the full folder path in the UserRole data
+        if (item == "Partitions") {
+            // do nothing
+        } else if (item == "Negative") {
+            capthis->addColorListWidget(item, dir.path() + "/" + item, Qt::transparent);
+        } else {
+            capthis->addColorListWidget(item, dir.path() + "/" + item, capthis->getAColor());
+        }
+    });
 
-    QDir mydir(dirtext);
+    // populate the picture list
+    QDir mydir(root);
     if (mydir.exists()) {
         QStringList filters;
         filters << "*.jpg";
         QStringList files = mydir.entryList(filters, QDir::Files, QDir::Name | QDir::IgnoreCase);
-        auto* capthis = (this);
         ui->listWidget->clear();
         std::for_each(
                     files.begin(),
                     files.end(),
-                    [&dirtext, capthis, thumbsize, d1, d2, dp, dn](QString i) {
-            QString cimgpath = dirtext + QString("/") + i;
-            QImageReader cimg(cimgpath);
-            if (!cimg.canRead()) {
-                ErrorDialog error(capthis, "No Image!!");
-                error.setModal(true);
-                error.exec();
-            } else {
-                // fix size
-                int newwd = thumbsize;
-                int newht = thumbsize;
-                double scalar = 1.0;
-                QSize cimgsize = cimg.size();
-                if (cimgsize.width() >= cimgsize.height()) {
-                    // Width Bigger or equal
-                    if (cimgsize.width() > thumbsize) {
-                        scalar = double(thumbsize) / double(cimgsize.width());
-                        newht = int(round(scalar * cimgsize.height()));
-                    }
-                } else {
-                    // Height Bigger
-                    if (cimgsize.height() > thumbsize) {
-                        scalar = double(thumbsize) / double(cimgsize.height());
-                        newwd = int(round(scalar * cimgsize.width()));
-                    }
-                }
-                cimg.setScaledSize(QSize(newwd, newht));
-                // end fix size
-                QImage cimgdata = cimg.read();
-                QListWidgetItem* imgitem = new QListWidgetItem(i, capthis->ui->listWidget);
-                imgitem->setData(Qt::DecorationRole, cimgdata);
-                imgitem->setData(Qt::UserRole, cimgpath);
-            }
+                    [&root, capthis, d1, d2](QString i) {
+            // i is the file name, stored in the label
+            // store the full filepath in the UserRole data
+            capthis->addPicListWidget(i, root + "/" + i);
         });
 
     } else {
@@ -136,126 +191,146 @@ void EcoCensus::on_openButton_2_clicked()
 {
    QListWidgetItem* citem = ui->dirList->currentItem();
    if (citem != NULL) {
-       qDebug() << citem->data(Qt::UserRole).toString();
+       if (DEBUG >= 2) qDebug() << citem->data(Qt::UserRole).toString();
        QDesktopServices::openUrl(QUrl(citem->data(Qt::UserRole).toString(), QUrl::TolerantMode));
    }
 }
 
-void EcoCensus::on_listWidget_itemClicked(QListWidgetItem *item)
-{
-    int thumbsize = thumbsz;
-    QString d1 = "Partitions";
-    QString d2 = "Predictions";
-    QString dp = "Positive";
-    QString dn = "Negative";
-    QFile thefile(item->data(Qt::UserRole).toString());
-    QFileInfo info(thefile);
-    QDir mydir(info.absoluteDir());
-    mydir.cd(d1);
-    QDir dirp(info.absoluteDir());
-    dirp.cd(dp);
-    QDir dirn(info.absoluteDir());
-    dirn.cd(dn);
-    //qDebug() << "dirp: " << dirp;
-    //qDebug() << "dirn: " << dirn;
-    //qDebug() << "mydir: " << mydir;
-    QStringList filters;
-    filters << QString("*" + info.fileName());
-    //qDebug() << "filters: " << filters;
-    QStringList pfiles = dirp.entryList(filters, QDir::Files, QDir::Name | QDir::IgnoreCase);
-    //qDebug() << "pfiles: " << pfiles;
-    QStringList nfiles = dirn.entryList(filters, QDir::Files, QDir::Name | QDir::IgnoreCase);
-    //qDebug() << "nfiles: " << nfiles;
-    QStringList files = pfiles << nfiles;
-    files.sort(Qt::CaseInsensitive);
-    //std::sort(files.begin(), files.end());
-    //qDebug() << files;
-    ui->grid->clear();
-    QImageReader dims(item->data(Qt::UserRole).toString());
-    QSize imgsize = dims.size();
-    int partitionsize = partsz;
-    int rows = ceil(imgsize.height() / double(partitionsize));
-    int cols = ceil(imgsize.width() / double(partitionsize));
-    ui->grid->setRowCount(rows);
-    ui->grid->setColumnCount(cols);
-    int gx = 0;
-    int gy = 0;
-    auto* capthis = (this);
+void EcoCensus::populateList_Partitions(vector<BoxInfo> &list, QString fileName) {
+    // get a copy of "this" for the lambda function to use
+    auto* capthis = this;
 
-    blockDialog = new Dialog(this);
-    //blockDialog->setWindowModality(Qt::WindowModal);
-    blockDialog->show();
-    QThread::sleep(2);
+    // loop the children of our QListWidget
+    for (int i = 0; i < ui->dirList->count(); i++) {
+        // get the current item in various forms in case we need them
+        // Widget Item
+        QListWidgetItem* item = ui->dirList->item(i);
+        // Widget itself
+        QWidget* widget = ui->dirList->itemWidget(item);
+        // Custom Class with needed information
+        ColorTest* ct = (ColorTest*)widget;
+
+        // get the current directory
+        QString dirPath = item->data(Qt::UserRole).toString();
+        QDir curDir(dirPath);
+        // get the list of files inside
+        QStringList filters;
+        filters << QString("*" + fileName);
+        QStringList images = curDir.entryList(filters, QDir::Files);
+        std::for_each(
+                    images.begin(),
+                    images.end(),
+                    [capthis, &list, &ct, dirPath](QString file){
+            // blank result
+            BoxInfo info;
+            // color
+            info.pencolor = ct->getColorValue();
+            // xy
+            QStringList pieces = file.split('_');
+            int offset = 0;
+            info.x = pieces.at(1 + offset).toInt();
+            info.y = pieces.at(0 + offset).toInt();
+            // wh
+            QString curFile = dirPath + "/" + file;
+            if (DEBUG >= 4) qDebug() << curFile;
+            QImageReader curImg(curFile);
+            QSize sz = curImg.size();
+            if (DEBUG >= 4) qDebug() << "size: " << sz;
+            info.w = (sz.width()) - 1;
+            info.h = (sz.height()) - 1;
+            // until we get the jpg headers fixed in the partitioning, the
+            // automatic size getting won't work
+            //info.w = 300;
+            //info.h = 300;
+            // push the result to the list
+            list.push_back(info);
+        });
+    }
+
+    // get the destination folder
+    QString dest = ui->destUrl->text();
+    QString resultDir = dest + "/" + "Predictions";
+    QDir dir(resultDir);
+    // get the folder list
+    QStringList results = dir.entryList(QStringList(), QDir::Dirs | QDir::NoDotAndDotDot);
+    if (DEBUG >= 4) qDebug() << "results: " << results;
 
     std::for_each(
-                files.begin(),
-                files.end(),
-                [capthis, &gx, &gy, &dirp, &dirn, thumbsize](QString s){
-        // since I'm too lazy to fix my problems before they arrive
-        // I'll check both folders for the image I want
-        QString imgpath;
-        QImage dat;
-        int Height = 0;
-        int Width = 0;
-        QColor bg = Qt::white;
-        // Negative Folder
-        imgpath = "";
-        imgpath = dirn.absoluteFilePath(s);
-        //qDebug() << "Trying: " << imgpath;
-        if (QFile(imgpath).exists()) {
-            //qDebug() << "Found!";
-            QImageReader img(imgpath);
-            if (!img.canRead()) {
-                ErrorDialog error(capthis, QString("No image: " + s));
-                error.setModal(true);
-                error.exec();
-            } else {
-                QSize sz = img.size();
-                double scalar = double(100) / double(partsz);
-                int w = int(round(scalar * sz.width()));
-                int h = int(round(scalar * sz.height()));
-                Height = sz.height();
-                Width = sz.width();
-                img.setScaledSize(QSize(w, h));
-                dat = img.read();
-            }
+                results.begin(),
+                results.end(),
+                [resultDir, capthis, fileName](QString folder){
+        if (folder == "Negative") {
+            return;
         }
-        // Positive folder
-        imgpath = "";
-        imgpath = dirp.absoluteFilePath(s);
-        //qDebug() << "Trying: " << imgpath;
-        if (QFile(imgpath).exists()) {
-            //qDebug() << "Found!";
-            QImageReader img(imgpath);
-            if (!img.canRead()) {
-                ErrorDialog error(capthis, QString("No image: " + s));
-                error.setModal(true);
-                error.exec();
-            } else {
-                bg = Qt::red;
-                QSize sz = img.size();
-                double scalar = double(100) / double(partsz);
-                int w = int(round(scalar * sz.width()));
-                int h = int(round(scalar * sz.height()));
-                Height = sz.height();
-                Width = sz.width();
-                img.setScaledSize(QSize(w, h));
-                dat = img.read();
-            }
-        }
-        //qDebug() << "===";
-        QTableWidgetItem* cell = new QTableWidgetItem;
-        cell->setIcon(QIcon(QPixmap::fromImage(dat)));
-        cell->setData(Qt::ToolTipRole, s);
-        cell->setBackgroundColor(bg);
-        capthis->ui->grid->setItem(gx, gy, cell);
-        gx++;
-        if (gx >= double(Width)/double(partsz)) {
-            gx = 0;
-            gy++;
-        }
+        QString curDir = resultDir + "/" + folder;
+        QDir dir(curDir);
+        // get the file list
+        QStringList filters;
+        filters << QString("*" + fileName);
+        QStringList files = dir.entryList(filters, QDir::Files);
+
     });
+}
 
-    blockDialog->close();
+void EcoCensus::on_listWidget_itemClicked(QListWidgetItem *item)
+{
+    // get full file path and information
+    QString filepath = item->data(Qt::UserRole).toString();
 
+    // create our copy of the image in memory
+    QImage imgdata(item->data(Qt::UserRole).toString());
+    // attack a painter to the image data
+    QPainter painter(&imgdata);
+
+    // need to populate a list of the areas to draw shapes around
+    // need the colors to draw each type
+    vector<BoxInfo> boxes;
+    // GET ALL THE BOX INFO
+    populateList_Partitions(boxes, item->text());
+
+    //
+    //
+    //
+    // convert to work on the directory/color list
+    // change the box info list userdata to have the referenced directory or the
+    // parent directory so it's all stored in memory where the user can't create bugs
+    // by changing the folders (no ui->destUrl allowed anymore once the predictions are done)
+    //
+    //
+    //
+
+    // DRAW ALL THE BOXES start
+    std::for_each(
+                boxes.begin(),
+                boxes.end(),
+                [&painter](BoxInfo item){
+
+        if (DEBUG >= 4) qDebug() <<
+                    item.pencolor << ", " <<
+                    item.x << ", " <<
+                    item.y << ", " <<
+                    item.w << ", " <<
+                    item.h << ", " <<
+                    "";
+
+        // create a pen
+        QPen pen;
+        pen.setColor((item.pencolor));
+        pen.setWidth(10);
+        pen.setCapStyle(Qt::RoundCap);
+        pen.setJoinStyle(Qt::MiterJoin);
+        // insert the correct color here
+        painter.setPen(pen);
+        //painter.
+        // insert the correct posx, posy, szx, szy
+        painter.drawRect(item.x, item.y, item.w, item.h);
+    });
+    // DRAW ALL THE BOXES end
+    // update the label with our painted image
+    ui->imageLabel->setPixmap(QPixmap::fromImage(imgdata));
+}
+
+void EcoCensus::on_pushButton_clicked()
+{
+    addColorListWidget(getALabel(), "C:/", getAColor());
 }
