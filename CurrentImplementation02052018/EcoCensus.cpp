@@ -15,6 +15,9 @@
 #include "colortest.h"
 
 int DEBUG = 2;
+// @cleanup quick fix for header mismatch
+bool RELEASE = true;
+bool MODE = true;
 
 EcoCensus::EcoCensus(QWidget *parent) :
     QMainWindow(parent),
@@ -117,29 +120,9 @@ void EcoCensus::on_getDirPos_clicked()
     ui->destUrl->setText(asdf->getExistingDirectory(this, tr("Open Dir"), "./", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks));
 }
 
-void EcoCensus::on_button_predict_clicked()
+void EcoCensus::fillDirList(QString dest)
 {
-    // get a copy of "this" for the lambda functions to use
-    auto* capthis = (this);
-    // ROOT/Partitions
-    // DEST/Predictions/RESULT
-    // QByteArray array = str.toLocal8Bit();
-
-    QString d1 = "/Partitions";
-    QString d2 = "/Predictions";
-
-    // Root URL to char*
-    QString root = ui->rootUrl->text();
-    char* rootbuf = root.toLocal8Bit().data();
-    // Destination URL to char*
-    QString dest = ui->destUrl->text();
-    if (dest.isEmpty()) {
-        dest = root;
-    }
-    char* destbuf = dest.toLocal8Bit().data();
-
-    // Predict on the directories
-    predictions(rootbuf, destbuf);
+    auto* capthis = this;
     // collect folder names in a list
     QString resultDir = dest;// + d2;
     QDir dir(resultDir);
@@ -163,6 +146,38 @@ void EcoCensus::on_button_predict_clicked()
             capthis->addColorListWidget(item, dir.path() + "/" + item, capthis->getAColor());
         }
     });
+}
+
+void EcoCensus::on_button_predict_clicked()
+{
+    // get a copy of "this" for the lambda functions to use
+    auto* capthis = (this);
+    // ROOT/Partitions
+    // DEST/Predictions/RESULT
+    // QByteArray array = str.toLocal8Bit();
+
+    QString d1 = "/Partitions";
+    QString d2 = "/Predictions";
+
+    // Root URL to char*
+    QString root = ui->rootUrl->text();
+    char* rootbuf = root.toLocal8Bit().data();
+    // Destination URL to char*
+    QString dest = ui->destUrl->text();
+    // is empty
+    if (dest.isEmpty()) {
+        dest = root;
+    }
+    // STILL empty even thought it was set to root dir
+    if (dest.isEmpty()) {
+        // error here that dir was not chosen
+    }
+    char* destbuf = dest.toLocal8Bit().data();
+
+    // Predict on the directories
+    predictions(rootbuf, destbuf);
+
+    fillDirList(dest);
 
     // populate the picture list
     QDir mydir(root);
@@ -225,55 +240,50 @@ void EcoCensus::populateList_Partitions(vector<BoxInfo> &list, QString fileName)
             BoxInfo info;
             // color
             info.pencolor = ct->getColorValue();
+            // pen wd
+            info.penwidth = 10;
             // xy
             QStringList pieces = file.split('_');
+            // if there's junk at the start of the filename in the future, we need to fix this
             int offset = 0;
-            info.x = pieces.at(1 + offset).toInt();
-            info.y = pieces.at(0 + offset).toInt();
+            double pwscalar = 0;
+
+            // tests I was doing with making sure the pen lines don't overlap
+            // the x and y positions add half the pen width so it doesn't exit out of the image
+            // the width and height subtract the whole pen width so it doesn't overlap the next one over
+            if (MODE) {
+                pwscalar = (1.0 / 2.0);
+            }
+            info.x = pieces.at(1 + offset).toInt() + floor(info.penwidth * pwscalar);
+            info.y = pieces.at(0 + offset).toInt() + floor(info.penwidth * pwscalar);
             // wh
+            // GETTING THE WIDTH AND HEIGHT FROM IMAGE DATA
+            // until we get the jpg headers fixed in the partitioning, the
+            // automatic size getting won't work
             QString curFile = dirPath + "/" + file;
             if (DEBUG >= 4) qDebug() << curFile;
             QImageReader curImg(curFile);
             QSize sz = curImg.size();
             if (DEBUG >= 4) qDebug() << "size: " << sz;
-            info.w = (sz.width()) - 1;
-            info.h = (sz.height()) - 1;
-            // until we get the jpg headers fixed in the partitioning, the
-            // automatic size getting won't work
-            //info.w = 300;
-            //info.h = 300;
+            // remove divide by 10 when the headers work properly
+            info.w = (sz.width() / 10) - (ceil(info.penwidth * (2 * pwscalar)));
+            info.h = (sz.height() / 10) - (ceil(info.penwidth * (2 * pwscalar)));
+            // WH FROM DATA END
+
+            // WH HARDCODED
+            if (RELEASE) {
+                info.w = 300 - ceil(info.penwidth * (2 * pwscalar));
+                info.h = 300 - ceil(info.penwidth * (2 * pwscalar));
+            }
+            // WH HARDCODED END
+
             // push the result to the list
             list.push_back(info);
         });
     }
-
-    // get the destination folder
-    QString dest = ui->destUrl->text();
-    QString resultDir = dest + "/" + "Predictions";
-    QDir dir(resultDir);
-    // get the folder list
-    QStringList results = dir.entryList(QStringList(), QDir::Dirs | QDir::NoDotAndDotDot);
-    if (DEBUG >= 4) qDebug() << "results: " << results;
-
-    std::for_each(
-                results.begin(),
-                results.end(),
-                [resultDir, capthis, fileName](QString folder){
-        if (folder == "Negative") {
-            return;
-        }
-        QString curDir = resultDir + "/" + folder;
-        QDir dir(curDir);
-        // get the file list
-        QStringList filters;
-        filters << QString("*" + fileName);
-        QStringList files = dir.entryList(filters, QDir::Files);
-
-    });
 }
 
-void EcoCensus::on_listWidget_itemClicked(QListWidgetItem *item)
-{
+void EcoCensus::imageUpdate(QListWidgetItem *item) {
     // get full file path and information
     QString filepath = item->data(Qt::UserRole).toString();
 
@@ -287,17 +297,6 @@ void EcoCensus::on_listWidget_itemClicked(QListWidgetItem *item)
     vector<BoxInfo> boxes;
     // GET ALL THE BOX INFO
     populateList_Partitions(boxes, item->text());
-
-    //
-    //
-    //
-    // convert to work on the directory/color list
-    // change the box info list userdata to have the referenced directory or the
-    // parent directory so it's all stored in memory where the user can't create bugs
-    // by changing the folders (no ui->destUrl allowed anymore once the predictions are done)
-    //
-    //
-    //
 
     // DRAW ALL THE BOXES start
     std::for_each(
@@ -316,7 +315,7 @@ void EcoCensus::on_listWidget_itemClicked(QListWidgetItem *item)
         // create a pen
         QPen pen;
         pen.setColor((item.pencolor));
-        pen.setWidth(10);
+        pen.setWidth(item.penwidth);
         pen.setCapStyle(Qt::RoundCap);
         pen.setJoinStyle(Qt::MiterJoin);
         // insert the correct color here
@@ -330,7 +329,26 @@ void EcoCensus::on_listWidget_itemClicked(QListWidgetItem *item)
     ui->imageLabel->setPixmap(QPixmap::fromImage(imgdata));
 }
 
+void EcoCensus::on_listWidget_itemClicked(QListWidgetItem *item)
+{
+    imageUpdate(item);
+}
+
 void EcoCensus::on_pushButton_clicked()
 {
-    addColorListWidget(getALabel(), "C:/", getAColor());
+    // Root URL to char*
+    QString root = ui->rootUrl->text();
+    // Destination URL to char*
+    QString dest = ui->destUrl->text();
+    // is empty
+    if (dest.isEmpty()) {
+        dest = root;
+    }
+    // STILL empty even though set to root
+    if (dest.isEmpty()) {
+        // error here saying that dir was not chosen
+    } else {
+        fillDirList(dest);
+    }
+    //addColorListWidget(getALabel(), "C:/", getAColor());
 }
