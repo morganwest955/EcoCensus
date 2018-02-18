@@ -1,1 +1,0 @@
-unresolved external (library): clean, run qmake, rebuild

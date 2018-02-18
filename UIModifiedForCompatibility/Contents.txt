@@ -1,1 +1,0 @@
-The new UI compatible with the classification method. 
