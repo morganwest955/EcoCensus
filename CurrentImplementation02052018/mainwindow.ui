@@ -38,7 +38,10 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="urlLabel">
+           <widget class="QLineEdit" name="rootUrl">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Root directory to find images to classify&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -56,16 +59,16 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit">
+           <widget class="QLineEdit" name="destUrl">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Destination directory for partitions to be sorted into, if blank, uses the Root directory&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string/>
             </property>
            </widget>
           </item>
          </layout>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_8"/>
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -101,11 +104,31 @@
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
           <widget class="QSplitter" name="splitter">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="orientation">
             <enum>Qt::Vertical</enum>
            </property>
-           <widget class="QListWidget" name="listWidget"/>
-           <widget class="QListWidget" name="dirList"/>
+           <widget class="QListWidget" name="listWidget">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+           <widget class="QListWidget" name="dirList">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
           </widget>
          </item>
          <item>
@@ -114,6 +137,9 @@
             <spacer name="horizontalSpacer">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeType">
+              <enum>QSizePolicy::Minimum</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -131,9 +157,19 @@
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="pushButton">
+             <property name="text">
+              <string>Refresh Features</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <spacer name="horizontalSpacer_2">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeType">
+              <enum>QSizePolicy::Minimum</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -147,131 +183,35 @@
          </item>
         </layout>
        </widget>
-       <widget class="QTableWidget" name="grid">
+       <widget class="QScrollArea" name="imageScroll">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>0</horstretch>
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
+          <horstretch>1</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="layoutDirection">
-         <enum>Qt::LeftToRight</enum>
+        <property name="widgetResizable">
+         <bool>true</bool>
         </property>
-        <property name="iconSize">
-         <size>
-          <width>125</width>
-          <height>200</height>
-         </size>
-        </property>
-        <property name="showGrid">
-         <bool>false</bool>
-        </property>
-        <attribute name="horizontalHeaderVisible">
-         <bool>false</bool>
-        </attribute>
-        <attribute name="verticalHeaderVisible">
-         <bool>false</bool>
-        </attribute>
-        <row>
-         <property name="text">
-          <string/>
+        <widget class="QWidget" name="scrollAreaWidgetContents">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>624</width>
+           <height>351</height>
+          </rect>
          </property>
-        </row>
-        <row>
-         <property name="text">
-          <string/>
-         </property>
-        </row>
-        <row>
-         <property name="text">
-          <string/>
-         </property>
-        </row>
-        <row>
-         <property name="text">
-          <string/>
-         </property>
-        </row>
-        <row>
-         <property name="text">
-          <string/>
-         </property>
-        </row>
-        <row>
-         <property name="text">
-          <string/>
-         </property>
-        </row>
-        <row>
-         <property name="text">
-          <string/>
-         </property>
-        </row>
-        <row>
-         <property name="text">
-          <string/>
-         </property>
-        </row>
-        <row>
-         <property name="text">
-          <string/>
-         </property>
-        </row>
-        <row>
-         <property name="text">
-          <string/>
-         </property>
-        </row>
-        <column>
-         <property name="text">
-          <string/>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string/>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string/>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string/>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string/>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string/>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string/>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string/>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string/>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string/>
-         </property>
-        </column>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="0" column="0">
+           <widget class="QLabel" name="imageLabel">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </widget>
      </widget>
@@ -284,7 +224,7 @@
      <x>0</x>
      <y>0</y>
      <width>960</width>
-     <height>22</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>
