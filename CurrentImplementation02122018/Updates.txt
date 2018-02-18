@@ -1,1 +1,0 @@
-The coordinate finder, model, and UI have been updated to form a functional prototype of EcoCensus
