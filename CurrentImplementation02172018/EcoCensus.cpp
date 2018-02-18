@@ -254,8 +254,8 @@ void EcoCensus::populateList_Partitions(vector<BoxInfo> &list, QString fileName)
             if (MODE) {
                 pwscalar = (1.0 / 2.0);
             }
-            info.x = pieces.at(1 + offset).toInt() + floor(info.penwidth * pwscalar);
-            info.y = pieces.at(0 + offset).toInt() + floor(info.penwidth * pwscalar);
+            info.x = pieces.at(0 + offset).toInt() + floor(info.penwidth * pwscalar);
+            info.y = pieces.at(1 + offset).toInt() + floor(info.penwidth * pwscalar);
             // wh
             // GETTING THE WIDTH AND HEIGHT FROM IMAGE DATA
             // until we get the jpg headers fixed in the partitioning, the
