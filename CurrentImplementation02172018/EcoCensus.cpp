@@ -12,6 +12,9 @@
 #include <QDesktopServices>
 #include <QThread>
 #include <QPainter>
+#include<QtCore/QFile>
+#include<QtCore/QTextStream>
+#include <QProcess>
 #include "colortest.h"
 
 int DEBUG = 2;
@@ -175,7 +178,18 @@ void EcoCensus::on_button_predict_clicked()
     char* destbuf = dest.toLocal8Bit().data();
 
     // Predict on the directories
-    predictions(rootbuf, destbuf);
+    QString swd = "cd /Users/bound_to_love/Downloads/EcoCensus-master-01292018/CurrentImplementation02052018";
+    QString params1 = "/Users/bound_to_love/tensorflow/bin/python ", params2 = "/Users/bound_to_love/tensorflow/bin/python ";
+    params1 += "/Users/bound_to_love/Downloads/EcoCensus-master-01292018/CurrentImplementation02052018/image_partition.py ";
+    params1 += root;
+    params1 += " ";
+    params1 += dest;
+    qDebug() << "Params1 " << params1;
+    params2 += "/Users/bound_to_love/Downloads/EcoCensus-master-01292018/CurrentImplementation02052018/predictions.py ";
+    params2 += dest;
+    system(qPrintable(swd));
+    system(qPrintable(params1));
+    system(qPrintable(params2));
 
     fillDirList(dest);
 
