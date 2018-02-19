@@ -28,6 +28,16 @@ class CoordFinder:
     # Converts coordinates from geographic to decimal degrees
     # Used because coordinates stored in image metadata are in geographic form
     def toDecimalDegrees(self,droneCoords):
+        # Type checking
+        tupleType = type((0,0))
+        floatType = type(1.1)
+        if (type(droneCoords) != tupleType):
+            return
+        if (len(droneCoords) != 2):
+            return
+        if (type(droneCoords[0]) != floatType or type(droneCoords[1]) != floatType):
+            return
+        
         # Geographic coords stored as tuple of lists ([hours,minutes,seconds],[hours,minutes,seconds])
         # Conversion formula is (hr + (min/60) + (sec/3600))
         latitude = droneCoords[0]
@@ -39,16 +49,50 @@ class CoordFinder:
     # Converts decimal degrees to universal transverse mercador in zone 5Q (Big Island).
     # Returns a coordinate tuple in UTM.
     def toUTM(self,coords):
+        # Type checking
+        tupleType = type((0,0))
+        floatType = type(1.1)
+        if (type(coords) != tupleType):
+            return
+        if (len(coords) != 2):
+            return
+        if (type(coords[0]) != floatType or type(coords[1]) != floatType):
+            return
+
+        # Conversion
         latitude = coords[0]
         longitude = coords[1]
         return utm.from_latlon(latitude,longitude) # see documentation for utm library
 
     # Takes in UTM coordinates and outputs decimal degree coordinates
     def fromUTM(self,coords):
+        # Type checking
+        tupleType = type((0,0))
+        floatType = type(1.1)
+        if (type(coords) != tupleType):
+            return
+        if (len(coords) != 2):
+            return
+        if (type(coords[0]) != floatType or type(coords[1]) != floatType):
+            return
+
+        # Conversion
         return utm.to_latlon(coords)
 
     # Takes the coordinate given from the image data and calculates the edge
     def getEdges(self,droneDD,imageRatio):
+        # Type checking
+        tupleType = type((0,0))
+        floatType = type(1.1)
+        if (type(droneDD) != tupleType):
+            return
+        if (len(droneDD) != 2):
+            return
+        if (type(droneDD[0]) != floatType or type(droneDD[1]) != floatType):
+            return
+        if (type(imageRatio) != type(1.01) or type(imageRatio) != type(1)):
+            return
+        
         # defining and setting variables
         droneLat = droneDD[0]
         droneLong = droneDD[1]
@@ -80,6 +124,17 @@ class CoordFinder:
     # Finds the midpoint of the coordinates calculated for multiple images that contain the same
     #   geographic location.
     def midpoint(self,coordinates):
+        # Type checking
+        tupleType = type((0,0))
+        floatType = type(1.1)
+        if (type(coordinates) != tupleType):
+            return
+        if (len(coordinates) != 2):
+            return
+        if (type(coordinates[0]) != floatType or type(coordinates[1]) != floatType):
+            return
+        
+        # Midpoint calculation
         xsum = 0
         ysum = 0
         for coord in coordinates:
@@ -93,6 +148,23 @@ class CoordFinder:
     #       of the drone.
     def rotate(self, coords, origin):
 
+        # Type checking
+        tupleType = type((0,0))
+        floatType = type(1.1)
+        intType = type(1)
+        if (type(coords) != tupleType):
+            return
+        if (len(coords) != 2):
+            return
+        if (type(coords[0]) != floatType or type(coords[1]) != floatType):
+            return
+        if (type(origin) != tupleType):
+            return
+        if (len(origin) != 2):
+            return
+        if (type(origin[0]) != intType or type(origin[1]) != intType):
+            return
+        
         # change image coordinates to emulate the center of the image as (0,0)
         xcoord = float(coords[0] - origin[0])
         ycoord = float(coords[1] - origin[1])
@@ -112,7 +184,7 @@ class CoordFinder:
     #   detected plants.
     def processCoords(self,droneCoords,plantCoords,imageDims):
 
-        # type checking
+        # type checking and performing necessary conversions for calculations
         tupleType = type((0,0))
         floatType = type(1.01)
         listType = type([1,2,3])
