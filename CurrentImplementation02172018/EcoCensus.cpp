@@ -179,17 +179,25 @@ void EcoCensus::on_button_predict_clicked()
 
     // Predict on the directories
     QString swd = "cd /Users/bound_to_love/Downloads/EcoCensus-master-01292018/CurrentImplementation02052018";
-    QString params1 = "/Users/bound_to_love/tensorflow/bin/python ", params2 = "/Users/bound_to_love/tensorflow/bin/python ";
+    QString params1 = "/Users/bound_to_love/tensorflow/bin/python ";
+    QString params2 = "/Users/bound_to_love/tensorflow/bin/python ";
+    QString params3 = "/Users/bound_to_love/tensorflow/bin/python ";
+    QString params4 = "rmdir ";
     params1 += "/Users/bound_to_love/Downloads/EcoCensus-master-01292018/CurrentImplementation02052018/image_partition.py ";
     params1 += root;
     params1 += " ";
     params1 += dest;
-    qDebug() << "Params1 " << params1;
     params2 += "/Users/bound_to_love/Downloads/EcoCensus-master-01292018/CurrentImplementation02052018/predictions.py ";
     params2 += dest;
+    params3 += "/Users/bound_to_love/Downloads/EcoCensus-master-01292018/CurrentImplementation02052018/imageReader.py ";
+    params3 += dest;
+    params4 += dest;
+    params4 += "/Partitions";
     system(qPrintable(swd));
     system(qPrintable(params1));
     system(qPrintable(params2));
+    system(qPrintable(params3));
+    system(qPrintable(params4));
 
     fillDirList(dest);
 
