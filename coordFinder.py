@@ -1,6 +1,6 @@
 """
-EcoCensus Coordinate converter
-Copyright 2017: Morgan West, Rebekah Loving, Morgan Friend
+EcoCensus Coordinate Converter
+Copyright 2018: Morgan West, Rebekah Loving
 """
 
 import math
@@ -9,34 +9,25 @@ import utm
 # This class will take the x,y coordinates of fauna found in a given
 # image and output the real world coordinates.
 # This class will be called per image list with identical non-metadata variables eg FOV, direciton.
-# For example:
-"""
-find = coordFinder(94,0)
-for droneCoords,droneHeight,focalLength,plantCoords in classifiedImages:
-    classifiedCoordinateList.append(find.processCoords(droneCoords,droneHeight,focalLength,plantCoords))
-"""
-
 class CoordFinder:
 
-    # if there is no defined direction, pass direction as 0 to assume north-up orientation
-    def __init__(self,FOV,direction,height):
+    def __init__(self,FOV,height):
         self.theta = float(FOV / 2)
-        self.phi = math.radians(direction) # polar rotation coordinate converted to radians
         self.droneHeight = height # in meters
         return
 
     # Converts coordinates from geographic to decimal degrees
     # Used because coordinates stored in image metadata are in geographic form
     def toDecimalDegrees(self,droneCoords):
-        # Type checking
-        tupleType = type((0,0))
-        floatType = type(1.1)
-        if (type(droneCoords) != tupleType):
-            return
-        if (len(droneCoords) != 2):
-            return
-        if (type(droneCoords[0]) != floatType or type(droneCoords[1]) != floatType):
-            return
+##        # Type checking
+##        tupleType = type((0,0))
+##        floatType = type(1.1)
+##        if (type(droneCoords) != tupleType):
+##            return
+##        if (len(droneCoords) != 2):
+##            return
+##        if (type(droneCoords[0]) != floatType or type(droneCoords[1]) != floatType):
+##            return
         
         # Geographic coords stored as tuple of lists ([hours,minutes,seconds],[hours,minutes,seconds])
         # Conversion formula is (hr + (min/60) + (sec/3600))
@@ -49,15 +40,15 @@ class CoordFinder:
     # Converts decimal degrees to universal transverse mercador in zone 5Q (Big Island).
     # Returns a coordinate tuple in UTM.
     def toUTM(self,coords):
-        # Type checking
-        tupleType = type((0,0))
-        floatType = type(1.1)
-        if (type(coords) != tupleType):
-            return
-        if (len(coords) != 2):
-            return
-        if (type(coords[0]) != floatType or type(coords[1]) != floatType):
-            return
+##        # Type checking
+##        tupleType = type((0,0))
+##        floatType = type(1.1)
+##        if (type(coords) != tupleType):
+##            return
+##        if (len(coords) != 2):
+##            return
+##        if (type(coords[0]) != floatType or type(coords[1]) != floatType):
+##            return
 
         # Conversion
         latitude = coords[0]
@@ -66,32 +57,31 @@ class CoordFinder:
 
     # Takes in UTM coordinates and outputs decimal degree coordinates
     def fromUTM(self,coords):
-        # Type checking
-        tupleType = type((0,0))
-        floatType = type(1.1)
-        if (type(coords) != tupleType):
-            return
-        if (len(coords) != 2):
-            return
-        if (type(coords[0]) != floatType or type(coords[1]) != floatType):
-            return
+##        # Type checking
+##        tupleType = type((0,0))
+##        floatType = type(1.1)
+##        if (type(coords) != tupleType):
+##            return
+##        if (len(coords) != 2):
+##            return
+##        if (type(coords[0]) != floatType or type(coords[1]) != floatType):
+##            return
 
         # Conversion
         return utm.to_latlon(coords)
 
     # Takes the coordinate given from the image data and calculates the edge
     def getEdges(self,droneDD,imageRatio):
-        # Type checking
-        tupleType = type((0,0))
-        floatType = type(1.1)
-        if (type(droneDD) != tupleType):
-            return
-        if (len(droneDD) != 2):
-            return
-        if (type(droneDD[0]) != floatType or type(droneDD[1]) != floatType):
-            return
-        if (type(imageRatio) != type(1.01) or type(imageRatio) != type(1)):
-            return
+##        # Type checking
+##        tupleType = type((0,0))
+##        floatType = type(1.1)
+##        intType = type(1)
+##        if (type(droneDD) != tupleType):
+##            return
+##        if (len(droneDD) != 2):
+##            return
+##        if (type(droneDD[0]) != floatType or type(droneDD[1]) != floatType):
+##            return
         
         # defining and setting variables
         droneLat = droneDD[0]
@@ -125,14 +115,14 @@ class CoordFinder:
     #   geographic location.
     def midpoint(self,coordinates):
         # Type checking
-        tupleType = type((0,0))
-        floatType = type(1.1)
-        if (type(coordinates) != tupleType):
-            return
-        if (len(coordinates) != 2):
-            return
-        if (type(coordinates[0]) != floatType or type(coordinates[1]) != floatType):
-            return
+##        tupleType = type((0,0))
+##        floatType = type(1.1)
+##        if (type(coordinates) != tupleType):
+##            return
+##        if (len(coordinates) != 2):
+##            return
+##        if (type(coordinates[0]) != floatType or type(coordinates[1]) != floatType):
+##            return
         
         # Midpoint calculation
         xsum = 0
@@ -146,24 +136,22 @@ class CoordFinder:
 
     # Rotates the coordinate around the origin (droneCoords) of the image to match direcitonal rotation
     #       of the drone.
-    def rotate(self, coords, origin):
+    def rotate(self, coords, origin, direction):
 
         # Type checking
-        tupleType = type((0,0))
-        floatType = type(1.1)
-        intType = type(1)
-        if (type(coords) != tupleType):
-            return
-        if (len(coords) != 2):
-            return
-        if (type(coords[0]) != floatType or type(coords[1]) != floatType):
-            return
-        if (type(origin) != tupleType):
-            return
-        if (len(origin) != 2):
-            return
-        if (type(origin[0]) != intType or type(origin[1]) != intType):
-            return
+##        tupleType = type((0,0))
+##        floatType = type(1.1)
+##        intType = type(1)
+##        if (type(coords) != tupleType):
+##            return
+##        if (len(coords) != 2):
+##            return
+##        if (type(coords[0]) != floatType or type(coords[1]) != floatType):
+##            return
+##        if (type(origin) != tupleType):
+##            return
+##        if (len(origin) != 2):
+##            return
         
         # change image coordinates to emulate the center of the image as (0,0)
         xcoord = float(coords[0] - origin[0])
@@ -171,9 +159,10 @@ class CoordFinder:
 
         # rotate coordinates around new origin
         # x' = xcos(phi)-ysin(phi)
-        # y' = ycos(phi)+xsin(phi)       
-        newCoordX = float(xcoord * math.cos(self.phi) - ycoord * math.sin(self.phi))
-        newCoordY = float(ycoord * math.cos(self.phi) - xcoord * math.sin(self.phi))
+        # y' = ycos(phi)+xsin(phi)
+        direction = math.radians(direction)
+        newCoordX = float(xcoord * math.cos(direction) - ycoord * math.sin(direction))
+        newCoordY = float(ycoord * math.cos(direction) - xcoord * math.sin(direction))
 
         # move back the origin and return the coordinates
         newCoordX += origin[0]
@@ -182,7 +171,7 @@ class CoordFinder:
     
     # Function for processing real life UTM coordinates given image and image coordinates of
     #   detected plants.
-    def processCoords(self,droneCoords,plantCoords,imageDims):
+    def processCoords(self, droneCoords, plantCoords, imageDims, direction):
 
         # type checking and performing necessary conversions for calculations
         tupleType = type((0,0))
@@ -221,7 +210,7 @@ class CoordFinder:
 
         # rotate coordinates along origin for direction
         # plantCoords = self.rotate(plantCoords, imageOrigin)
-        xcoord, ycoord = self.rotate(plantCoords, imageOrigin)
+        xcoord, ycoord = self.rotate(plantCoords, imageOrigin, direction)
         
         #calculating distances and ratios
         distWE = math.fabs(edgeW[0] - edgeE[0])
@@ -240,7 +229,6 @@ class CoordFinder:
             realCoordsX = latitude
         realCoordsY = edgeN[1] + (distNS * yratio)        
 
-        print(realCoordsX, realCoordsY)
         UTMcoords = self.toUTM((realCoordsX,realCoordsY))
-        return (UTMcoords, (realCoordsX, realCoordsY))
+        return ((realCoordsX, realCoordsY))
                 
